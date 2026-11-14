@@ -1,0 +1,6 @@
+@EnglishCenterManagement_CSW306_Project_HostAddress = http://localhost:5289
+
+GET {{EnglishCenterManagement_CSW306_Project_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
