@@ -1,6 +1,7 @@
 using EnglishCenterManagement_CSW306_Project.Data;
-using Microsoft.EntityFrameworkCore;
 using EnglishCenterManagement_CSW306_Project.Repositories;
+using EnglishCenterManagement_CSW306_Project.Services;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,6 +12,8 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+builder.Services.AddScoped<ICourseService, CourseService>();
+builder.Services.AddScoped<ITeacherService, TeacherService>();
 
 var app = builder.Build();
 
