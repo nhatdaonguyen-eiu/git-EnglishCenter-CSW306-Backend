@@ -21,4 +21,10 @@
     <Folder Include="Services\" />
   </ItemGroup>
 
+	<ItemGroup>
+		<Compile Remove="EnglishCenterManagement_CSW306_Project.Tests\**" />
+		<EmbeddedResource Remove="EnglishCenterManagement_CSW306_Project.Tests\**" />
+		<None Remove="EnglishCenterManagement_CSW306_Project.Tests\**" />
+	</ItemGroup>
+
 </Project>
