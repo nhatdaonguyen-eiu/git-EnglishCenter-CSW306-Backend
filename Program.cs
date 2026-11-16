@@ -11,10 +11,11 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+builder.Services.AddEnrollmentAttendanceScoreServices();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline...
+// Configure the HTTP request pipeline...s
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
