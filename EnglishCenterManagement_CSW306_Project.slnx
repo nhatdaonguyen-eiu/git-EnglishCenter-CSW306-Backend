@@ -1,4 +1,5 @@
 <Solution>
+  <Project Path="EnglishCenter.Tests/EnglishCenter.Tests.csproj" />
   <Project Path="EnglishCenterManagement_CSW306_Project.csproj" />
   <Project Path="EnglishCenterManagement_CSW306_Project.Tests/EnglishCenterManagement_CSW306_Project.Tests.csproj" />
 </Solution>

@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <DefaultItemExcludes>$(DefaultItemExcludes);EnglishCenterManagement_CSW306_Project.Tests\**</DefaultItemExcludes>
+    <DefaultItemExcludes>$(DefaultItemExcludes);EnglishCenterManagement_CSW306_Project.Tests\**;EnglishCenter.Tests\**</DefaultItemExcludes>
   </PropertyGroup>
 
   <ItemGroup>
