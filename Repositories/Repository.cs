@@ -1,7 +1,5 @@
 ﻿using EnglishCenterManagement_CSW306_Project.Data;
 using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace EnglishCenterManagement_CSW306_Project.Repositories
 {
