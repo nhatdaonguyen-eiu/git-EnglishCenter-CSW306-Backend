@@ -8,6 +8,12 @@ namespace EnglishCenterManagement_CSW306_Project.Constants
 
         public static readonly string[] All = { Midterm, Final };
 
+        // Khoảng điểm hợp lệ (khớp ràng buộc CK_Score_Value trong DB)
+        public const decimal MinValue = 0;
+        public const decimal MaxValue = 10;
+
+        public static bool IsValidValue(decimal value) => value >= MinValue && value <= MaxValue;
+
         public static string? Normalize(string? value) =>
             All.FirstOrDefault(x => string.Equals(x, value?.Trim(), StringComparison.OrdinalIgnoreCase));
     }
