@@ -303,7 +303,7 @@ dotnet test EnglishCenter.Tests
 
 In Visual Studio: **Test → Test Explorer → Run All**.
 
-43 automated tests in total (27 unit, 16 integration).
+76 automated tests in total (48 unit, 28 integration).
 
 ## Project status
 
@@ -312,8 +312,8 @@ In Visual Studio: **Test → Test Explorer → Run All**.
 | CRUD, relationships, REST, validation, migrations, seed data | Done |
 | Enrollment, Attendance, Score modules | Done |
 | Unit and integration tests | Done |
-| Registration, login, JWT, role-based authorization, profile | In progress: still being wired into `Program.cs`; `[Authorize]` still to be enabled on all controllers |
-| Swagger UI | Done (JWT "Authorize" button still to be added) |
+| Registration, login, JWT, role-based authorization, profile | Done |
+| Swagger UI | Done |
 | Postman collection | Not started |
 | Bonus: pagination, file upload, caching, API versioning, Docker, CI/CD | Not started (logging partly done by the global error handler) |
 
@@ -334,7 +334,7 @@ In Visual Studio: **Test → Test Explorer → Run All**.
 | Bạch Gia Huy | Core API Lead | Common response format and global error handling; Student and Class APIs; StudentService tests |
 | Nguyễn Thành Như | Feature Lead | Enrollment, Attendance and Score APIs; EnrollmentService tests |
 | Phạm Thanh Long | QA, Docs and Git Lead | Git workflow, Swagger, Postman, controller and integration tests, report and demo |
-| Phạm Tuyên | Docs, Presentation | README, presentation and demo |
+| Phạm Tuyên | Docs, Presentation | README, presentation sildes |
 
 ## Git workflow
 
