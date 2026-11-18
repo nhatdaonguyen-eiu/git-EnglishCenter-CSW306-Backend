@@ -1,11 +1,12 @@
 using EnglishCenterManagement_CSW306_Project.DTOs.EnrollmentDTOs;
 using EnglishCenterManagement_CSW306_Project.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace EnglishCenterManagement_CSW306_Project.Controllers
 {
     // TODO (sau khi TV2 merge JWT): bật phân quyền
-    // [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin")]
     [Route("api/[controller]")]
     public class EnrollmentsController : FeatureControllerBase
     {

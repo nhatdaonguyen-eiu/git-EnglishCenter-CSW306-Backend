@@ -1,12 +1,14 @@
 using EnglishCenterManagement_CSW306_Project.DTOs;
 using EnglishCenterManagement_CSW306_Project.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace EnglishCenterManagement_CSW306_Project.Controllers
 {
     // Cùng quy ước với các controller khác: thành công trả thẳng dữ liệu,
     // sửa/xóa trả 204, lỗi do ExceptionMiddleware đổi thành { message } (404, 409, 400...).
     // TODO (sau khi TV2 merge JWT): bật phân quyền, ví dụ [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin")]
     [ApiController]
     [Route("api/[controller]")]
     public class StudentsController : ControllerBase

@@ -125,5 +125,34 @@ app.UseAuthentication(); // CỦA TV2
 app.UseAuthorization();
 
 app.MapControllers();
+// Tự động khởi tạo Role và tài khoản Admin mặc định khi khởi động API
+using (var scope = app.Services.CreateScope())
+{
+    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>();
+
+    string[] roles = { "Admin", "Teacher", "Student" };
+    foreach (var role in roles)
+    {
+        if (!await roleManager.RoleExistsAsync(role))
+            await roleManager.CreateAsync(new IdentityRole(role));
+    }
+
+    // Tạo sẵn tài khoản Admin mẫu để demo
+    var adminEmail = "admin@englishcenter.com";
+    var adminUser = await userManager.FindByEmailAsync(adminEmail);
+    if (adminUser == null)
+    {
+        adminUser = new AppUser
+        {
+            UserName = adminEmail,
+            Email = adminEmail,
+            FullName = "Quản Trị Viên Trung Tâm",
+            EmailConfirmed = true
+        };
+        await userManager.CreateAsync(adminUser, "Admin@123456");
+        await userManager.AddToRoleAsync(adminUser, "Admin");
+    }
+}
 
 app.Run();

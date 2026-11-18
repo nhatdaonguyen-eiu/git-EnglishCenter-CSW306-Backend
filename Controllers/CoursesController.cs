@@ -1,9 +1,11 @@
 ﻿using EnglishCenterManagement_CSW306_Project.DTOs.CourseDTOs;
 using EnglishCenterManagement_CSW306_Project.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace EnglishCenterManagement_CSW306_Project.Controllers
 {
+    [Authorize(Roles = "Admin")]
     [Route("api/[controller]")]
     [ApiController]
     public class CoursesController : ControllerBase

@@ -1,12 +1,13 @@
 using EnglishCenterManagement_CSW306_Project.DTOs.AttendanceDTOs;
 using EnglishCenterManagement_CSW306_Project.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace EnglishCenterManagement_CSW306_Project.Controllers
 {
     // TODO (sau khi TV2 merge JWT): bật phân quyền
     // Admin + Teacher: ghi/sửa/xóa điểm danh, xem thống kê. Student: chỉ xem của mình.
-    // [Authorize(Roles = "Admin,Teacher")]
+    [Authorize(Roles = "Admin,Teacher")]
     [Route("api/[controller]")]
     public class AttendancesController : FeatureControllerBase
     {

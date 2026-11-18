@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace EnglishCenterManagement_CSW306_Project.Controllers
 {
+    [Authorize(Roles = "Admin")]
     [Route("api/[controller]")]
     [ApiController]
     public class TeachersController : ControllerBase

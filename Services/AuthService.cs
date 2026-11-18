@@ -29,10 +29,20 @@ namespace EnglishCenterManagement_CSW306_Project.Services
             if (!result.Succeeded)
                 return new AuthResponseDto { IsSuccess = false, Message = string.Join(", ", result.Errors.Select(e => e.Description)) };
 
-            if (!await _roleManager.RoleExistsAsync(dto.Role))
-                await _roleManager.CreateAsync(new IdentityRole(dto.Role));
+            // BẢO MẬT: Mặc định người đăng ký luôn nhận Role là Student
+            // Tuyệt đối không cho phép client tự gửi "Admin" để leo thang đặc quyền
+            var assignedRole = "Student";
+
+            // Chỉ cho phép chọn Teacher nếu được chỉ định, còn lại mặc định là Student
+            if (!string.IsNullOrWhiteSpace(dto.Role) && dto.Role.Equals("Teacher", StringComparison.OrdinalIgnoreCase))
+            {
+                assignedRole = "Teacher";
+            }
+
+            if (!await _roleManager.RoleExistsAsync(assignedRole))
+                await _roleManager.CreateAsync(new IdentityRole(assignedRole));
             
-            await _userManager.AddToRoleAsync(user, dto.Role);
+            await _userManager.AddToRoleAsync(user, assignedRole);
 
             return new AuthResponseDto { IsSuccess = true, Message = "Đăng ký thành công!" };
         }
