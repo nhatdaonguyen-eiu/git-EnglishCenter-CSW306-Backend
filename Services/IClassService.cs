@@ -7,7 +7,7 @@ namespace EnglishCenterManagement_CSW306_Project.Services
         Task<List<ClassDto>> GetAllAsync();
         Task<ClassDto> GetByIdAsync(int id);
         Task<ClassDto> CreateAsync(CreateClassDto dto);
-        Task<ClassDto> UpdateAsync(int id, UpdateClassDto dto);
+        Task UpdateAsync(int id, UpdateClassDto dto);
         Task DeleteAsync(int id);
 
         // T19

@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 namespace EnglishCenterManagement_CSW306_Project.Common
 {
     /// <summary>
-    /// Bắt mọi exception chưa xử lý và trả về JSON theo ApiResponse với status code phù hợp.
+    /// Bắt mọi exception chưa xử lý và trả về { "message": "..." } với status code phù hợp.
     /// </summary>
     public class ExceptionMiddleware
     {
@@ -56,7 +56,7 @@ namespace EnglishCenterManagement_CSW306_Project.Common
                 context.Response.StatusCode = (int)status;
                 context.Response.ContentType = "application/json";
 
-                var body = ApiResponse<object>.Fail(message);
+                var body = new ErrorResponse(message);
                 await context.Response.WriteAsync(JsonSerializer.Serialize(body, JsonOptions));
             }
         }

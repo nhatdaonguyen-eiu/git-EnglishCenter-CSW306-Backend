@@ -1,37 +1,55 @@
+using System.Linq.Expressions;
 using EnglishCenterManagement_CSW306_Project.Common;
+using EnglishCenterManagement_CSW306_Project.Data;
 using EnglishCenterManagement_CSW306_Project.DTOs;
 using EnglishCenterManagement_CSW306_Project.Entities;
-using EnglishCenterManagement_CSW306_Project.Repositories;
+using Microsoft.EntityFrameworkCore;
 
 namespace EnglishCenterManagement_CSW306_Project.Services
 {
     public class ClassService : IClassService
     {
-        private readonly IRepository<Class> _classRepo;
-        private readonly IRepository<Course> _courseRepo;
-        private readonly IRepository<Teacher> _teacherRepo;
+        // Dùng AppDbContext trực tiếp (giống module Enrollment) vì cần join sang Course và Teacher
+        // để lấy tên. EF gộp thành 1 câu SQL, không phải tải cả bảng Course và Teacher lên bộ nhớ.
+        private readonly AppDbContext _context;
 
-        public ClassService(
-            IRepository<Class> classRepo,
-            IRepository<Course> courseRepo,
-            IRepository<Teacher> teacherRepo)
+        public ClassService(AppDbContext context)
         {
-            _classRepo = classRepo;
-            _courseRepo = courseRepo;
-            _teacherRepo = teacherRepo;
+            _context = context;
         }
+
+        private static readonly Expression<Func<Class, ClassDto>> ToDto = c => new ClassDto
+        {
+            Id = c.Id,
+            Name = c.Name,
+            CourseId = c.CourseId,
+            CourseName = c.Course!.Name,
+            TeacherId = c.TeacherId,
+            TeacherName = c.Teacher!.FullName,
+            Schedule = c.Schedule,
+            MaxStudents = c.MaxStudents,
+            StartDate = c.StartDate,
+            EndDate = c.EndDate
+        };
 
         public async Task<List<ClassDto>> GetAllAsync()
         {
-            var classes = await _classRepo.GetAllAsync();
-            return await ToDtoListAsync(classes);
+            return await _context.Classes
+                .AsNoTracking()
+                .OrderBy(c => c.Id)
+                .Select(ToDto)
+                .ToListAsync();
         }
 
         public async Task<ClassDto> GetByIdAsync(int id)
         {
-            var cls = await _classRepo.GetByIdAsync(id)
-                ?? throw new NotFoundException($"Không tìm thấy lớp có id {id}");
-            return (await ToDtoListAsync(new[] { cls })).First();
+            var cls = await _context.Classes
+                .AsNoTracking()
+                .Where(c => c.Id == id)
+                .Select(ToDto)
+                .FirstOrDefaultAsync();
+
+            return cls ?? throw new NotFoundException($"Không tìm thấy lớp học có Id = {id}");
         }
 
         public async Task<ClassDto> CreateAsync(CreateClassDto dto)
@@ -49,14 +67,18 @@ namespace EnglishCenterManagement_CSW306_Project.Services
                 EndDate = dto.EndDate!.Value
             };
 
-            await _classRepo.AddAsync(cls);
+            _context.Classes.Add(cls);
+
+            if (!await _context.TrySaveChangesAsync())
+                throw new ConflictException("Không thể lưu lớp học vì dữ liệu bị ràng buộc");
+
             return await GetByIdAsync(cls.Id);
         }
 
-        public async Task<ClassDto> UpdateAsync(int id, UpdateClassDto dto)
+        public async Task UpdateAsync(int id, UpdateClassDto dto)
         {
-            var cls = await _classRepo.GetByIdAsync(id)
-                ?? throw new NotFoundException($"Không tìm thấy lớp có id {id}");
+            var cls = await _context.Classes.FindAsync(id)
+                ?? throw new NotFoundException($"Không tìm thấy lớp học có Id = {id}");
 
             await ValidateAsync(dto);
 
@@ -68,37 +90,50 @@ namespace EnglishCenterManagement_CSW306_Project.Services
             cls.StartDate = dto.StartDate!.Value;
             cls.EndDate = dto.EndDate!.Value;
 
-            await _classRepo.UpdateAsync(cls);
-            return await GetByIdAsync(cls.Id);
+            if (!await _context.TrySaveChangesAsync())
+                throw new ConflictException("Không thể lưu lớp học vì dữ liệu bị ràng buộc");
         }
 
         public async Task DeleteAsync(int id)
         {
-            var cls = await _classRepo.GetByIdAsync(id)
-                ?? throw new NotFoundException($"Không tìm thấy lớp có id {id}");
+            var cls = await _context.Classes.FindAsync(id)
+                ?? throw new NotFoundException($"Không tìm thấy lớp học có Id = {id}");
 
-            // Lớp đã có ghi danh sẽ vi phạm khóa ngoại -> middleware trả 409
-            await _classRepo.DeleteAsync(cls.Id);
+            if (await _context.Enrollments.AnyAsync(e => e.ClassId == id))
+                throw new ConflictException("Lớp đã có học viên ghi danh, không thể xóa");
+
+            _context.Classes.Remove(cls);
+
+            if (!await _context.TrySaveChangesAsync())
+                throw new ConflictException("Không thể xóa lớp học vì còn dữ liệu liên quan");
         }
 
         // ---------- T19: xem lớp theo khóa, theo giáo viên ----------
 
         public async Task<List<ClassDto>> GetByCourseAsync(int courseId)
         {
-            _ = await _courseRepo.GetByIdAsync(courseId)
-                ?? throw new NotFoundException($"Không tìm thấy khóa học có id {courseId}");
+            if (!await _context.Courses.AnyAsync(c => c.Id == courseId))
+                throw new NotFoundException($"Không tìm thấy khóa học có Id = {courseId}");
 
-            var classes = (await _classRepo.GetAllAsync()).Where(c => c.CourseId == courseId);
-            return await ToDtoListAsync(classes);
+            return await _context.Classes
+                .AsNoTracking()
+                .Where(c => c.CourseId == courseId)
+                .OrderBy(c => c.Id)
+                .Select(ToDto)
+                .ToListAsync();
         }
 
         public async Task<List<ClassDto>> GetByTeacherAsync(int teacherId)
         {
-            _ = await _teacherRepo.GetByIdAsync(teacherId)
-                ?? throw new NotFoundException($"Không tìm thấy giáo viên có id {teacherId}");
+            if (!await _context.Teachers.AnyAsync(t => t.Id == teacherId))
+                throw new NotFoundException($"Không tìm thấy giáo viên có Id = {teacherId}");
 
-            var classes = (await _classRepo.GetAllAsync()).Where(c => c.TeacherId == teacherId);
-            return await ToDtoListAsync(classes);
+            return await _context.Classes
+                .AsNoTracking()
+                .Where(c => c.TeacherId == teacherId)
+                .OrderBy(c => c.Id)
+                .Select(ToDto)
+                .ToListAsync();
         }
 
         // ---------- helper ----------
@@ -106,36 +141,16 @@ namespace EnglishCenterManagement_CSW306_Project.Services
         private async Task ValidateAsync(CreateClassDto dto)
         {
             if (dto.EndDate!.Value <= dto.StartDate!.Value)
-            {
                 throw new BadRequestException("Ngày kết thúc phải sau ngày bắt đầu");
-            }
 
-            _ = await _courseRepo.GetByIdAsync(dto.CourseId!.Value)
-                ?? throw new NotFoundException($"Không tìm thấy khóa học có id {dto.CourseId}");
+            var courseId = dto.CourseId!.Value;
+            var teacherId = dto.TeacherId!.Value;
 
-            _ = await _teacherRepo.GetByIdAsync(dto.TeacherId!.Value)
-                ?? throw new NotFoundException($"Không tìm thấy giáo viên có id {dto.TeacherId}");
-        }
+            if (!await _context.Courses.AnyAsync(c => c.Id == courseId))
+                throw new NotFoundException($"Không tìm thấy khóa học có Id = {courseId}");
 
-        // Repository không Include nên tự tra tên khóa học / giáo viên một lần cho cả danh sách.
-        private async Task<List<ClassDto>> ToDtoListAsync(IEnumerable<Class> classes)
-        {
-            var courses = (await _courseRepo.GetAllAsync()).ToDictionary(c => c.Id, c => c.Name);
-            var teachers = (await _teacherRepo.GetAllAsync()).ToDictionary(t => t.Id, t => t.FullName);
-
-            return classes.Select(c => new ClassDto
-            {
-                Id = c.Id,
-                Name = c.Name,
-                CourseId = c.CourseId,
-                CourseName = c.CourseId.HasValue && courses.TryGetValue(c.CourseId.Value, out var cn) ? cn : null,
-                TeacherId = c.TeacherId,
-                TeacherName = c.TeacherId.HasValue && teachers.TryGetValue(c.TeacherId.Value, out var tn) ? tn : null,
-                Schedule = c.Schedule,
-                MaxStudents = c.MaxStudents,
-                StartDate = c.StartDate,
-                EndDate = c.EndDate
-            }).ToList();
+            if (!await _context.Teachers.AnyAsync(t => t.Id == teacherId))
+                throw new NotFoundException($"Không tìm thấy giáo viên có Id = {teacherId}");
         }
     }
 }
