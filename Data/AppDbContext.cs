@@ -31,6 +31,7 @@ namespace EnglishCenterManagement_CSW306_Project.Data
             builder.Entity<Course>(entity =>
             {
                 entity.HasIndex(e => e.Name).IsUnique();
+                entity.Property(e => e.Fee).HasPrecision(18, 2);
                 entity.ToTable(t => t.HasCheckConstraint("CK_Course_Fee", "Fee >= 0"));
                 entity.ToTable(t => t.HasCheckConstraint("CK_Course_TotalSessions", "TotalSessions > 0"));
             });
@@ -91,6 +92,7 @@ namespace EnglishCenterManagement_CSW306_Project.Data
             builder.Entity<Score>(entity =>
             {
                 entity.HasIndex(s => new { s.EnrollmentId, s.Type }).IsUnique();
+                entity.Property(s => s.Value).HasPrecision(4, 2);
                 entity.ToTable(t => t.HasCheckConstraint("CK_Score_Value", "[Value] >= 0 AND [Value] <= 10"));
             });
 
