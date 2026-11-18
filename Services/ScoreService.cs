@@ -66,6 +66,10 @@ namespace EnglishCenterManagement_CSW306_Project.Services
             if (type == null)
                 return FeatureResult<ScoreDto>.Invalid($"Loại điểm không hợp lệ. Chỉ chấp nhận: {string.Join(", ", ScoreType.All)}");
 
+            // Kiểm tra lại ở Service (ngoài [Range] trong DTO) để không phụ thuộc vào attribute
+            if (!ScoreType.IsValidValue(dto.Value))
+                return FeatureResult<ScoreDto>.Invalid($"Điểm phải nằm trong khoảng {ScoreType.MinValue} đến {ScoreType.MaxValue}");
+
             var enrollment = await _context.Enrollments.FindAsync(dto.EnrollmentId);
             if (enrollment == null)
                 return FeatureResult<ScoreDto>.NotFound($"Không tìm thấy ghi danh có Id = {dto.EnrollmentId}");
@@ -95,6 +99,9 @@ namespace EnglishCenterManagement_CSW306_Project.Services
 
         public async Task<FeatureResult<bool>> UpdateScoreAsync(int id, UpdateScoreDto dto)
         {
+            if (!ScoreType.IsValidValue(dto.Value))
+                return FeatureResult<bool>.Invalid($"Điểm phải nằm trong khoảng {ScoreType.MinValue} đến {ScoreType.MaxValue}");
+
             var score = await _context.Scores.FindAsync(id);
             if (score == null)
                 return FeatureResult<bool>.NotFound($"Không tìm thấy điểm có Id = {id}");
