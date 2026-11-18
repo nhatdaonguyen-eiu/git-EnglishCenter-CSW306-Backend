@@ -1,7 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
-
-namespace EnglishCenterManagement_CSW306_Project.Repositories
+﻿namespace EnglishCenterManagement_CSW306_Project.Repositories
 {
     public interface IRepository<T> where T : class
     {
