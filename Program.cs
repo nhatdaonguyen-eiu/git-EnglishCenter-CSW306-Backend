@@ -10,7 +10,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// T16: lỗi validation (ModelState) cũng trả về cùng định dạng ApiResponse
+// T16: lỗi validation (ModelState) trả về cùng dạng { message, errors } với các lỗi khác
 builder.Services.AddControllers()
     .ConfigureApiBehaviorOptions(options =>
     {
@@ -20,7 +20,7 @@ builder.Services.AddControllers()
                 .SelectMany(v => v.Errors)
                 .Select(e => e.ErrorMessage)
                 .ToList();
-            return new BadRequestObjectResult(ApiResponse<object>.Fail("Dữ liệu không hợp lệ", errors));
+            return new BadRequestObjectResult(new ErrorResponse("Dữ liệu không hợp lệ", errors));
         };
     });
 builder.Services.AddEndpointsApiExplorer();
