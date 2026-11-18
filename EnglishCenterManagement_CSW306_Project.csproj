@@ -5,10 +5,10 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
-	
-	<PropertyGroup>
-		<DefaultItemExcludes>$(DefaultItemExcludes);EnglishCenterManagement_CSW306_Project.Tests\**</DefaultItemExcludes>
-	</PropertyGroup>
+
+  <PropertyGroup>
+    <DefaultItemExcludes>$(DefaultItemExcludes);EnglishCenterManagement_CSW306_Project.Tests\**;EnglishCenter.Tests\**</DefaultItemExcludes>
+  </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.34" />
@@ -19,12 +19,5 @@
     </PackageReference>
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
   </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Controllers\" />
-    <Folder Include="Services\" />
-  </ItemGroup>
-
-	
 
 </Project>
