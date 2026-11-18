@@ -105,6 +105,7 @@ builder.Services.AddScoped<IClassService, ClassService>();
 
 // TV2: Auth Service (BẮT BUỘC CÓ DÒNG NÀY ĐỂ KHÔNG BỊ LỖI 500)
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IProfileService, ProfileService>();
 
 var app = builder.Build();
 
