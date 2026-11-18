@@ -1,63 +1,115 @@
+using EnglishCenterManagement_CSW306_Project.Common;
 using EnglishCenterManagement_CSW306_Project.Data;
-using Microsoft.EntityFrameworkCore;
-using EnglishCenterManagement_CSW306_Project.Repositories;
 using EnglishCenterManagement_CSW306_Project.Entities;
+using EnglishCenterManagement_CSW306_Project.Repositories;
 using EnglishCenterManagement_CSW306_Project.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
-using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// 1. Database
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-builder.Services.AddIdentity<AppUser, IdentityRole>()
-    .AddEntityFrameworkStores<AppDbContext>()
-    .AddDefaultTokenProviders();
+// 2. Cấu hình Identity (CỦA TV2)
+builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
+{
+    options.Password.RequireDigit = false;
+    options.Password.RequireLowercase = false;
+    options.Password.RequireUppercase = false;
+    options.Password.RequireNonAlphanumeric = false;
+    options.Password.RequiredLength = 6;
+})
+.AddEntityFrameworkStores<AppDbContext>()
+.AddDefaultTokenProviders();
 
-var jwt = builder.Configuration.GetSection("Jwt");
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(o => o.TokenValidationParameters = new TokenValidationParameters
+// 3. Cấu hình JWT Bearer Authentication (CỦA TV2)
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.RequireHttpsMetadata = false;
+    options.SaveToken = true;
+    options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuer = true,
         ValidateAudience = true,
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
-        ValidIssuer = jwt["Issuer"],
-        ValidAudience = jwt["Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(jwt["Key"]!))
-    });
-
-builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddScoped<IProfileService, ProfileService>();
-
-builder.Services.AddRateLimiter(o => {
-    o.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(c => 
-        RateLimitPartition.GetFixedWindowLimiter(c.User.Identity?.Name ?? c.Request.Headers.Host.ToString(), 
-        _ => new FixedWindowRateLimiterOptions { AutoReplenishment = true, PermitLimit = 100, QueueLimit = 0, Window = TimeSpan.FromMinutes(1) }));
-    o.RejectionStatusCode = 429;
+        ValidAudience = builder.Configuration["Jwt:Audience"],
+        ValidIssuer = builder.Configuration["Jwt:Issuer"],
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
+    };
 });
 
-builder.Services.AddControllers();
+// 4. Chuẩn hóa lỗi Validation Modelstate (CỦA TV3)
+builder.Services.AddControllers()
+    .ConfigureApiBehaviorOptions(options =>
+    {
+        options.InvalidModelStateResponseFactory = ctx =>
+        {
+            var errors = ctx.ModelState.Values
+                .SelectMany(v => v.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToList();
+            return new BadRequestObjectResult(new ErrorResponse("Dữ liệu không hợp lệ", errors));
+        };
+    });
+
+// 5. Cấu hình Swagger có nút Authorize nạp JWT token (CỦA TV2)
 builder.Services.AddEndpointsApiExplorer();
-
-builder.Services.AddSwaggerGen(c => {
-    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme { 
-        Description = "Bearer [token]", Name = "Authorization", In = ParameterLocation.Header, Type = SecuritySchemeType.ApiKey, Scheme = "Bearer" 
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "English Center Management API", Version = "v1" });
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Nhập token JWT theo định dạng: Bearer {token}"
     });
-    c.AddSecurityRequirement(new OpenApiSecurityRequirement { 
-        { new OpenApiSecurityScheme { Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" } }, new List<string>() } 
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
     });
 });
 
+// 6. Đăng ký Dependency Injection (TẤT CẢ MODULES)
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
-builder.Services.AddEnrollmentAttendanceScoreServices();
+builder.Services.AddScoped<ICourseService, CourseService>();
+builder.Services.AddScoped<ITeacherService, TeacherService>();
+builder.Services.AddEnrollmentAttendanceScoreServices(); // TV4: Enrollment, Attendance, Score
+
+// TV3: Student, Class
+builder.Services.AddScoped<IStudentService, StudentService>();
+builder.Services.AddScoped<IClassService, ClassService>();
+
+// TV2: Auth Service (BẮT BUỘC CÓ DÒNG NÀY ĐỂ KHÔNG BỊ LỖI 500)
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 var app = builder.Build();
+
+// 7. Middleware bắt lỗi toàn cục (CỦA TV3 - PHẢI NẰM ĐẦU PIPELINE)
+app.UseMiddleware<ExceptionMiddleware>();
 
 if (app.Environment.IsDevelopment())
 {
@@ -66,15 +118,11 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseRateLimiter();
-app.UseAuthentication();
-app.UseAuthorization();
-app.MapControllers();
 
-using (var scope = app.Services.CreateScope()) {
-    var rm = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-    foreach (var role in new[] { "Admin", "Teacher", "Student" })
-        if (!await rm.RoleExistsAsync(role)) await rm.CreateAsync(new IdentityRole(role));
-}
+// 8. Pipeline Xác thực & Phân quyền (BẮT BUỘC AUTHENTICATION TRƯỚC, AUTHORIZATION SAU)
+app.UseAuthentication(); // CỦA TV2
+app.UseAuthorization();
+
+app.MapControllers();
 
 app.Run();
